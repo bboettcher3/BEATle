@@ -1,0 +1,2 @@
+# BEATle
+Euclidean rhythm generator
