@@ -34,15 +34,34 @@ public:
 		submitButton.addListener(this);
 		addAndMakeVisible(&submitButton);
 		stepsSlider.setSliderStyle(Slider::LinearHorizontal);
-		stepsSlider.setBounds(10, 10, 300, 20);
+		stepsSlider.setBounds(60, 10, 300, 20);
 		stepsSlider.setRange(0, 15, 1);
 		stepsSlider.addListener(this);
 		addAndMakeVisible(&stepsSlider);
+		stepsLabel.setText("Steps:", dontSendNotification);
+		stepsLabel.setBounds(10, 0, 50, 50);
+		stepsLabel.setFont(15.0f);
+		addAndMakeVisible(&stepsLabel);
 		beatsSlider.setSliderStyle(Slider::LinearHorizontal);
-		beatsSlider.setBounds(10, 40, 300, 20);
+		beatsSlider.setBounds(60, 40, 300, 20);
 		beatsSlider.setRange(0, 15, 1);
 		beatsSlider.addListener(this);
 		addAndMakeVisible(&beatsSlider);
+		beatsLabel.setText("Beats:", dontSendNotification);
+		beatsLabel.setBounds(10, 30, 50, 50);
+		beatsLabel.setFont(15.0f);
+		addAndMakeVisible(&beatsLabel);
+		bpmSlider.setSliderStyle(Slider::LinearVertical);
+		bpmSlider.setTextBoxStyle(Slider::TextBoxBelow, false, 50, 40);
+		bpmSlider.setBounds(400, 40, 50, 150);
+		bpmSlider.setRange(80, 160, 1);
+		bpmSlider.setValue(120, dontSendNotification);
+		bpmSlider.addListener(this);
+		addAndMakeVisible(&bpmSlider);
+		bpmLabel.setText("BPM:", dontSendNotification);
+		bpmLabel.setBounds(400, 10, 50, 50);
+		bpmLabel.setFont(15.0f);
+		addAndMakeVisible(&bpmLabel);
 		result.setText("00000000", dontSendNotification);
 		result.setBounds(10, 100, 200, 50);
 		result.setFont(20.0f);
@@ -146,6 +165,10 @@ public:
 				beatsSlider.setValue(stepsSlider.getValue(), dontSendNotification);
 			}
 		}
+		else if (slider == &bpmSlider) {
+			int newMS = ((1 / (bpmSlider.getValue() / 60)) * 1000); //convert bpm to milliseconds
+			startTimer(0, newMS);
+		}
 	}
 
 private:
@@ -154,6 +177,9 @@ private:
     // Your private member variables go here...
 	TextButton submitButton;
 	Slider stepsSlider, beatsSlider;
+	Label stepsLabel, beatsLabel;
+	Slider bpmSlider;
+	Label bpmLabel;
 	int currStep = 0;
 	Label result;
 
