@@ -64,8 +64,12 @@ public:
 		addAndMakeVisible(&bpmLabel);
 		result.setText("00000000", dontSendNotification);
 		result.setBounds(10, 100, 200, 50);
-		result.setFont(20.0f);
+		result.setFont(31.0f);
 		addAndMakeVisible(&result);
+		chevron.setText("^", dontSendNotification);
+		chevron.setBounds(10, 135, 30, 30);
+		chevron.setFont(24.0f);
+		addAndMakeVisible(&chevron);
 
 		osc.phaseReset(0);
 		env.setAttack(100);
@@ -145,7 +149,7 @@ public:
         // This is called when the MainContentComponent is resized.
         // If you add any child components, this is where you should
         // update their positions.
-		
+
     }
 
 	void buttonClicked(Button* button) override
@@ -182,6 +186,7 @@ private:
 	Label bpmLabel;
 	int currStep = 0;
 	Label result;
+	Label chevron;
 
 	maxiOsc osc;
 	maxiEnv env;
@@ -242,6 +247,8 @@ private:
 			if (currStep >= (result.getText().length())) {
 				currStep = 0;
 			}
+			int xBound = 10 + (currStep * 16);
+			chevron.setBounds(xBound, 135, 30, 30);
 			char currBeat = result.getText()[currStep];
 			bool beat = atoi(&currBeat);
 			env.amplitude = 0;
