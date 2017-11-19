@@ -7,15 +7,17 @@
 */
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "maximilian.h"
 
 //==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainContentComponent   : public AudioAppComponent,
-							   public Button::Listener,
-							   public Slider::Listener
+class MainContentComponent : public AudioAppComponent,
+	public Button::Listener,
+	public Slider::Listener,
+	private Timer
 							   
 {
 public:
@@ -23,6 +25,7 @@ public:
     MainContentComponent()
     {
         setSize (800, 600);
+		startTimerHz(2);
 
 		//init gui components
 		submitButton.setButtonText("Submit");
@@ -43,7 +46,16 @@ public:
 		result.setBounds(10, 100, 200, 50);
 		result.setFont(20.0f);
 		addAndMakeVisible(&result);
+		test.setText("0", dontSendNotification);
+		test.setBounds(10, 170, 200, 50);
+		test.setFont(20.0f);
+		addAndMakeVisible(&test);
 
+		osc.phaseReset(0);
+		env.setAttack(100);
+		env.setDecay(300);
+		env.setSustain(0);
+		env.setRelease(20);
 
         // specify the number of input and output channels that we want to open
         setAudioChannels (2, 2);
@@ -74,7 +86,24 @@ public:
 
         // Right now we are not producing any data, in which case we need to clear the buffer
         // (to prevent the output of random noise)
-        bufferToFill.clearActiveBufferRegion();
+		bufferToFill.buffer->clear();
+		int numChannels = bufferToFill.buffer->getNumChannels();
+		int numSamples = bufferToFill.buffer->getNumSamples();
+		float currSampleVal = 0;
+		int currSample = 0;
+		while (--numSamples >= 0)
+		{
+			currSampleVal = 0;
+
+			currSampleVal = osc.sinewave(440) * env.adsr(1, env.trigger);
+			
+
+			for (int i = numChannels; --i >= 0;) {
+				bufferToFill.buffer->addSample(i, currSample, currSampleVal);
+			}
+			currSample++;
+		}		
+		if (env.trigger = 1) env.trigger = 0;
     }
 
     void releaseResources() override
@@ -104,16 +133,19 @@ public:
 	void buttonClicked(Button* button) override
 	{
 		if (button == &submitButton) {
-			std::string resultText = euclidean((int)firstNum.getValue(), (int)secondNum.getValue());
+			std::string resultText = euclidean((int)secondNum.getValue(), (int)firstNum.getValue());
 			result.setText(resultText, dontSendNotification);
+			currStep = 0;
 		}
 		
 	}
 
 	void sliderValueChanged(Slider* slider) override 
 	{
-		if (slider == &firstNum) {
-
+		if (slider == &secondNum) {
+			if (secondNum.getValue() > firstNum.getValue()) {
+				secondNum.setValue(firstNum.getValue(), dontSendNotification);
+			}
 		}
 	}
 
@@ -123,7 +155,11 @@ private:
     // Your private member variables go here...
 	TextButton submitButton;
 	Slider firstNum, secondNum;
-	Label result;
+	int currStep = 0;
+	Label result, test;
+
+	maxiOsc osc;
+	maxiEnv env;
 
 	std::string euclidean(int beats, int steps)
 	{
@@ -174,6 +210,26 @@ private:
 		for (int i = 1; i <= y_amount; i++)
 			rhythm += y;
 		return rhythm;
+	}
+
+	void timerCallback() override {
+		if (currStep >= (result.getText().length())) {
+			currStep = 0;
+		}
+		char currBeat = result.getText()[currStep];
+		bool beat = atoi(&currBeat);
+		env.amplitude = 0;
+		//test.setText(juce::String::charToString(currBeat), dontSendNotification);
+		if (beat) {
+			test.setText("1", dontSendNotification);
+			env.trigger = 1;
+		}
+		else {
+			test.setText("0", dontSendNotification);
+			env.trigger = 0;
+		}
+
+		currStep++;
 	}
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainContentComponent)
