@@ -24,7 +24,7 @@ public:
     //==============================================================================
     MainContentComponent()
     {
-        setSize (800, 600);
+        setSize (500, 200);
 		startTimer(0, 500);
 		startTimer(1, 30);
 
