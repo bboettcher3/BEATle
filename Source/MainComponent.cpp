@@ -17,7 +17,7 @@
 class MainContentComponent : public AudioAppComponent,
 	public Button::Listener,
 	public Slider::Listener,
-	private Timer
+	private MultiTimer
 							   
 {
 public:
@@ -25,36 +25,33 @@ public:
     MainContentComponent()
     {
         setSize (800, 600);
-		startTimerHz(2);
+		startTimer(0, 500);
+		startTimer(1, 30);
 
 		//init gui components
 		submitButton.setButtonText("Submit");
 		submitButton.setBounds(10, 70, 100, 30);
 		submitButton.addListener(this);
 		addAndMakeVisible(&submitButton);
-		firstNum.setSliderStyle(Slider::LinearHorizontal);
-		firstNum.setBounds(10, 10, 300, 20);
-		firstNum.setRange(0, 15, 1);
-		firstNum.addListener(this);
-		addAndMakeVisible(&firstNum);
-		secondNum.setSliderStyle(Slider::LinearHorizontal);
-		secondNum.setBounds(10, 40, 300, 20);
-		secondNum.setRange(0, 15, 1);
-		secondNum.addListener(this);
-		addAndMakeVisible(&secondNum);
+		stepsSlider.setSliderStyle(Slider::LinearHorizontal);
+		stepsSlider.setBounds(10, 10, 300, 20);
+		stepsSlider.setRange(0, 15, 1);
+		stepsSlider.addListener(this);
+		addAndMakeVisible(&stepsSlider);
+		beatsSlider.setSliderStyle(Slider::LinearHorizontal);
+		beatsSlider.setBounds(10, 40, 300, 20);
+		beatsSlider.setRange(0, 15, 1);
+		beatsSlider.addListener(this);
+		addAndMakeVisible(&beatsSlider);
 		result.setText("00000000", dontSendNotification);
 		result.setBounds(10, 100, 200, 50);
 		result.setFont(20.0f);
 		addAndMakeVisible(&result);
-		test.setText("0", dontSendNotification);
-		test.setBounds(10, 170, 200, 50);
-		test.setFont(20.0f);
-		addAndMakeVisible(&test);
 
 		osc.phaseReset(0);
 		env.setAttack(100);
 		env.setDecay(300);
-		env.setSustain(0);
+		env.setSustain(.5f);
 		env.setRelease(20);
 
         // specify the number of input and output channels that we want to open
@@ -95,7 +92,7 @@ public:
 		{
 			currSampleVal = 0;
 
-			currSampleVal = osc.sinewave(440) * env.adsr(1, env.trigger);
+			currSampleVal = osc.sawn(440) * env.adsr(1, env.trigger);
 			
 
 			for (int i = numChannels; --i >= 0;) {
@@ -103,7 +100,9 @@ public:
 			}
 			currSample++;
 		}		
-		if (env.trigger = 1) env.trigger = 0;
+		if (env.trigger == 1) {
+			env.trigger = 0;
+		}
     }
 
     void releaseResources() override
@@ -133,7 +132,7 @@ public:
 	void buttonClicked(Button* button) override
 	{
 		if (button == &submitButton) {
-			std::string resultText = euclidean((int)secondNum.getValue(), (int)firstNum.getValue());
+			std::string resultText = euclidean((int)beatsSlider.getValue(), (int)stepsSlider.getValue());
 			result.setText(resultText, dontSendNotification);
 			currStep = 0;
 		}
@@ -142,9 +141,9 @@ public:
 
 	void sliderValueChanged(Slider* slider) override 
 	{
-		if (slider == &secondNum) {
-			if (secondNum.getValue() > firstNum.getValue()) {
-				secondNum.setValue(firstNum.getValue(), dontSendNotification);
+		if (slider == &beatsSlider) {
+			if (beatsSlider.getValue() > stepsSlider.getValue()) {
+				beatsSlider.setValue(stepsSlider.getValue(), dontSendNotification);
 			}
 		}
 	}
@@ -154,9 +153,9 @@ private:
 
     // Your private member variables go here...
 	TextButton submitButton;
-	Slider firstNum, secondNum;
+	Slider stepsSlider, beatsSlider;
 	int currStep = 0;
-	Label result, test;
+	Label result;
 
 	maxiOsc osc;
 	maxiEnv env;
@@ -212,24 +211,27 @@ private:
 		return rhythm;
 	}
 
-	void timerCallback() override {
-		if (currStep >= (result.getText().length())) {
-			currStep = 0;
-		}
-		char currBeat = result.getText()[currStep];
-		bool beat = atoi(&currBeat);
-		env.amplitude = 0;
-		//test.setText(juce::String::charToString(currBeat), dontSendNotification);
-		if (beat) {
-			test.setText("1", dontSendNotification);
-			env.trigger = 1;
-		}
-		else {
-			test.setText("0", dontSendNotification);
-			env.trigger = 0;
-		}
+	void timerCallback(int timerID) override {
+		if (timerID == 0) {
+			if (currStep >= (result.getText().length())) {
+				currStep = 0;
+			}
+			char currBeat = result.getText()[currStep];
+			bool beat = atoi(&currBeat);
+			env.amplitude = 0;
+			if (beat) {
+				env.trigger = 1;
+			}
+			else {
+				env.trigger = 0;
+			}
 
-		currStep++;
+			currStep++;
+		}
+		else if (timerID == 1) {
+			
+		}
+		
 	}
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainContentComponent)
